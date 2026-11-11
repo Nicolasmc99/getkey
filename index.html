@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#000000">
+<title>Clé d'accès | Nicolas AI Trade</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23000000'/%3E%3Cpath d='M16 5v22' stroke='%23FFFFFF' stroke-width='2.5' stroke-linecap='round'/%3E%3Crect x='11' y='10' width='10' height='12' rx='2' fill='%23FFFFFF'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=JetBrains+Mono:wght@600&display=swap" rel="stylesheet">
+
+<script>
+/* ============ À REMPLIR ============ */
+const CONFIG = {
+  // Adresse de ta fonction Supabase « keygate »
+  apiUrl: "https://ptarvnzpzfwjybwyrlkk.supabase.co/functions/v1/keygate",
+  // Nom d'utilisateur de ton bot, sans le @ (ex. "NicolasAITradeBot")
+  botUsername: "NicolasAITrade_bot",
+  // Durée d'accès donnée par le bot, en heures (même valeur que dans keygate.js)
+  accessHours: 24,
+  // À laisser vide si « Verify JWT » est désactivé sur la fonction.
+  // Sinon, colle ici la clé publique (anon / publishable) de Supabase.
+  supabaseKey: ""
+};
+/* =================================== */
+</script>
+
+<style>
+  :root {
+    --ground: #000000;
+    --paper: #121212;
+    --ink: #FFFFFF;
+    --mist: #242424;
+    --rule: #343434;
+    --slate: #A6A6A6;
+    --accent: #2F4BFF;
+    --candle: #FF5A5F;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: 20px 16px 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  .wrap { width: 100%; max-width: 420px; margin-top: clamp(0px, 5vh, 56px); }
+
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    margin: 0 4px 18px;
+    color: #fff; font-weight: 700; font-size: 17px; letter-spacing: -0.01em;
+  }
+  .brand svg { flex: none; }
+
+  /* Le ticket : une partie haute (explication ou clé), une ligne de découpe, un talon (action) */
+  .ticket {
+    position: relative; overflow: hidden;
+    background: var(--paper);
+    border-radius: 22px;
+    box-shadow: inset 0 0 0 1px #2A2A2A;
+  }
+  .ticket[data-tone="error"]::before {
+    content: ""; position: absolute; inset: 0 0 auto 0; height: 6px; background: var(--candle);
+  }
+  .ticket-main { padding: 28px 22px 24px; }
+  .ticket-stub { padding: 22px 22px 18px; }
+  .tear { position: relative; height: 0; margin: 0 22px; border-top: 2px dashed var(--rule); }
+  .tear::before, .tear::after {
+    content: ""; position: absolute; top: -13px;
+    width: 24px; height: 24px; border-radius: 50%; background: var(--ground);
+  }
+  .tear::before { left: -34px; }
+  .tear::after { right: -34px; }
+
+  h1 {
+    margin: 0 0 10px;
+    font-size: clamp(27px, 8.2vw, 34px); line-height: 1.08;
+    font-weight: 800; letter-spacing: -0.025em;
+    text-wrap: balance;
+  }
+  .lead { margin: 0; color: var(--slate); font-size: 16px; max-width: 34em; }
+
+  .steps { list-style: none; margin: 22px 0 0; padding: 0; display: grid; gap: 12px; counter-reset: step; }
+  .steps li {
+    counter-increment: step;
+    display: grid; grid-template-columns: 28px 1fr; gap: 12px; align-items: center;
+    color: var(--slate); font-size: 15.5px; line-height: 1.35;
+  }
+  .steps li::before {
+    content: counter(step);
+    display: grid; place-items: center;
+    width: 28px; height: 28px; border-radius: 50%;
+    box-shadow: inset 0 0 0 2px var(--rule);
+    font-size: 14px; font-weight: 700; color: var(--slate);
+  }
+  .steps li.now { color: var(--ink); font-weight: 700; }
+  .steps li.now::before { background: var(--ink); color: #000; box-shadow: none; }
+  .steps li.done::before { content: "✓"; background: var(--mist); color: var(--ink); box-shadow: none; }
+
+  .keybox {
+    margin-top: 22px; padding: 20px 12px 18px;
+    background: #000; color: #fff; border-radius: 16px; text-align: center;
+    box-shadow: inset 0 0 0 1px var(--rule);
+  }
+  .keybox output {
+    display: block; min-height: 1.3em;
+    font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-weight: 600; font-size: clamp(16px, 5.5vw, 25px); line-height: 1.3;
+    letter-spacing: 0.02em; white-space: nowrap;
+    -webkit-user-select: all; user-select: all;
+  }
+  .keybox small { display: block; margin-top: 8px; color: var(--slate); font-size: 13.5px; }
+
+  .actions { display: grid; gap: 10px; }
+  .btn {
+    display: flex; align-items: center; justify-content: center;
+    width: 100%; min-height: 54px; padding: 10px 16px;
+    border: 0; border-radius: 14px; cursor: pointer;
+    font: inherit; font-size: 17px; font-weight: 700; line-height: 1.2;
+    text-align: center; text-decoration: none;
+    transition: transform 0.08s ease, background-color 0.15s ease;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+  .btn-primary { background: #fff; color: #000; }
+  .btn-primary:hover { background: #EDEDED; }
+
+  /* Bouton « Commencer » : halo qui respire + reflet qui traverse */
+  #go { position: relative; overflow: hidden; animation: glow 2.4s ease-in-out infinite; }
+  #go::after {
+    content: ""; position: absolute; top: 0; bottom: 0; left: -60%; width: 45%;
+    background: linear-gradient(100deg, transparent, rgba(0, 0, 0, 0.16), transparent);
+    transform: skewX(-18deg);
+    animation: shine 2.4s ease-in-out infinite;
+  }
+  #go[disabled] { animation: none; }
+  #go[disabled]::after { display: none; }
+  @keyframes glow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.45); }
+    50% { box-shadow: 0 0 0 10px rgba(255, 255, 255, 0); }
+  }
+  @keyframes shine {
+    0%, 35% { left: -60%; }
+    85%, 100% { left: 120%; }
+  }
+  .btn-quiet { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 2px var(--ink); }
+  .btn-quiet:hover { background: var(--mist); }
+  .btn[disabled] { cursor: progress; opacity: 0.65; }
+
+  .wait { display: flex; align-items: center; gap: 12px; margin: 0; min-height: 54px; font-weight: 700; }
+  .wait i {
+    flex: none; width: 22px; height: 22px; border-radius: 50%;
+    border: 3px solid var(--mist); border-top-color: var(--ink);
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .note { margin: 14px 0 0; color: var(--slate); font-size: 13.5px; line-height: 1.45; }
+  .candles { display: block; width: 100%; height: 30px; margin-top: 18px; color: var(--rule); }
+
+  .foot { margin: 18px 6px 0; color: #8C8C8C; font-size: 13.5px; line-height: 1.45; }
+
+  [hidden] { display: none !important; }
+  @media (prefers-reduced-motion: reduce) {
+    .wait i { animation: none; border-top-color: var(--mist); background: var(--ink); border-width: 7px; }
+    .btn { transition: none; }
+    #go { animation: none; }
+    #go::after { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="brand">
+    <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><path d="M11 1.5v19" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round"/><rect x="6" y="6" width="10" height="10" rx="2" fill="#FFFFFF"/></svg>
+    Nicolas AI Trade
+  </header>
+
+  <main class="ticket" id="ticket">
+    <section class="ticket-main" aria-live="polite">
+      <h1 id="title">Récupère ta clé d'accès</h1>
+      <p class="lead" id="lead"></p>
+      <ol class="steps" id="steps">
+        <li>Passe la page sponsorisée</li>
+        <li>Reviens ici : ta clé s'affiche</li>
+        <li>Colle la clé dans le bot</li>
+      </ol>
+      <div class="keybox" id="keybox" hidden>
+        <output id="key"></output>
+        <small id="keyinfo"></small>
+      </div>
+    </section>
+
+    <div class="tear" aria-hidden="true"></div>
+
+    <section class="ticket-stub">
+      <div class="actions">
+        <p class="wait" id="wait" hidden><i aria-hidden="true"></i><span>Vérification de ton passage…</span></p>
+        <button class="btn btn-primary" id="go" type="button">Commencer</button>
+        <a class="btn btn-primary" id="bot" hidden rel="noopener">Ouvrir le bot avec ma clé</a>
+        <button class="btn btn-quiet" id="copy" type="button" hidden>Copier la clé</button>
+      </div>
+      <p class="note" id="note"></p>
+      <svg class="candles" id="candles" viewBox="0 0 340 30" preserveAspectRatio="none" aria-hidden="true"></svg>
+    </section>
+  </main>
+
+  <p class="foot">Cette page ne demande jamais de paiement ni de mot de passe.</p>
+
+  <noscript><p class="foot">Active JavaScript dans ton navigateur pour obtenir ta clé.</p></noscript>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const ui = {
+    ticket: $("ticket"), title: $("title"), lead: $("lead"), steps: $("steps"),
+    keybox: $("keybox"), key: $("key"), keyinfo: $("keyinfo"),
+    wait: $("wait"), go: $("go"), bot: $("bot"), copy: $("copy"), note: $("note")
+  };
+  const hours = CONFIG.accessHours || 24;
+  const botUrl = CONFIG.botUsername ? "https://t.me/" + CONFIG.botUsername.replace(/^@/, "") : "";
+  let goAction = begin;
+  let currentKey = "";
+
+  ui.go.addEventListener("click", () => goAction());
+  ui.copy.addEventListener("click", copyKey);
+
+  // ---------- Affichage ----------
+  function steps(now) {
+    ui.steps.hidden = !now;
+    [...ui.steps.children].forEach((li, i) => {
+      li.className = i + 1 < now ? "done" : i + 1 === now ? "now" : "";
+    });
+  }
+
+  function show(v) {
+    ui.ticket.dataset.tone = v.tone || "";
+    ui.title.textContent = v.title;
+    ui.lead.textContent = v.lead || "";
+    ui.lead.hidden = !v.lead;
+    steps(v.step || 0);
+    ui.keybox.hidden = !v.key;
+    ui.wait.hidden = !v.wait;
+    ui.go.hidden = !v.go;
+    ui.go.disabled = false;
+    if (v.go) { ui.go.textContent = v.go.label; goAction = v.go.action; }
+    ui.bot.hidden = !v.bot;
+    if (v.bot) { ui.bot.href = v.bot.href; ui.bot.textContent = v.bot.label; }
+    ui.copy.hidden = !v.key;
+    ui.copy.className = "btn " + (v.bot ? "btn-quiet" : "btn-primary");
+    ui.note.textContent = v.note || "";
+    ui.note.hidden = !v.note;
+  }
+
+  function showStart() {
+    show({
+      title: "Récupère ta clé d'accès",
+      lead: `La clé débloque le bot pendant ${hours} h. Elle est gratuite : tu passes par une page sponsorisée, puis tu reviens ici.`,
+      step: 1,
+      go: { label: "Commencer", action: begin },
+      note: "Si tu sautes la page sponsorisée, le lien est annulé et il faut recommencer."
+    });
+  }
+
+  function showKey(key, expiresAt) {
+    currentKey = key;
+    const mins = Math.max(1, Math.round((Date.parse(expiresAt) - Date.now()) / 60000));
+    show({
+      title: "Ta clé est prête",
+      lead: "Elle marche une seule fois, pour un seul compte Telegram.",
+      step: 3,
+      key: true,
+      bot: botUrl ? { href: `${botUrl}?start=${encodeURIComponent(key)}`, label: "Ouvrir le bot avec ma clé" } : null,
+      note: `Une fois la clé activée, le bot reste ouvert ${hours} h.`
+    });
+    ui.keyinfo.textContent = `À activer dans les ${mins} minutes`;
+    ui.key.setAttribute("aria-label", key);
+    typeOut(key);
+  }
+
+  const ERRORS = {
+    too_fast: ["Étape non terminée", "Tu es revenu trop vite, donc le lien a été annulé. Recommence et va jusqu'au bout de la page sponsorisée.", "restart"],
+    expired: ["Ce lien n'est plus valable", "Il a expiré ou a déjà servi. Recommence pour obtenir une nouvelle clé.", "restart"],
+    invalid: ["Ce lien n'est plus valable", "Il a expiré ou a déjà servi. Recommence pour obtenir une nouvelle clé.", "restart"],
+    already_redeemed: ["Cette clé est déjà activée", "Ton accès est en cours dans le bot. Reviens ici quand il sera terminé.", "bot"],
+    rate_limited: ["Limite du jour atteinte", "Trop de clés ont été demandées depuis cette connexion aujourd'hui. Réessaie demain.", "none"],
+    link_unavailable: ["Lien indisponible", "La page sponsorisée ne répond pas pour le moment. Réessaie dans quelques minutes.", "retry"],
+    network: ["Connexion impossible", "La page n'arrive pas à joindre le serveur. Vérifie ta connexion, puis réessaie.", "retry"],
+    server: ["Clés indisponibles", "Le service ne répond pas correctement pour le moment. Réessaie plus tard.", "retry"]
+  };
+
+  function showError(code, retry) {
+    const [title, lead, kind] = ERRORS[code] || ERRORS.server;
+    show({
+      tone: kind === "bot" ? "" : "error",
+      title, lead,
+      go: kind === "restart" ? { label: "Recommencer", action: restart }
+        : kind === "retry" ? { label: "Réessayer", action: retry || begin }
+        : null,
+      bot: kind === "bot" && botUrl ? { href: botUrl, label: "Ouvrir le bot" } : null
+    });
+  }
+
+  // La clé s'inscrit caractère par caractère (une seule fois, à l'arrivée)
+  function typeOut(key) {
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) { ui.key.textContent = key; return; }
+    let i = 0;
+    ui.key.textContent = "";
+    const timer = setInterval(() => {
+      ui.key.textContent = key.slice(0, ++i);
+      if (i >= key.length) clearInterval(timer);
+    }, 28);
+  }
+
+  async function copyKey() {
+    let done = false;
+    try { await navigator.clipboard.writeText(currentKey); done = true; } catch (e) {
+      const range = document.createRange();
+      range.selectNodeContents(ui.key);
+      const sel = getSelection();
+      sel.removeAllRanges(); sel.addRange(range);
+      try { done = document.execCommand("copy"); } catch (e2) { /* sélection laissée visible */ }
+    }
+    ui.copy.textContent = done ? "Clé copiée" : "Sélectionnée : copie-la";
+    setTimeout(() => { ui.copy.textContent = "Copier la clé"; }, 2200);
+  }
+
+  // ---------- Échanges avec le serveur ----------
+  async function api(body) {
+    const headers = { "Content-Type": "application/json" };
+    if (CONFIG.supabaseKey) {
+      headers.apikey = CONFIG.supabaseKey;
+      headers.Authorization = "Bearer " + CONFIG.supabaseKey;
+    }
+    const res = await fetch(CONFIG.apiUrl, { method: "POST", headers, body: JSON.stringify(body) });
+    let data = null;
+    try { data = await res.json(); } catch (e) { /* réponse illisible */ }
+    if (!data || typeof data.ok !== "boolean") return { ok: false, error: "server" };
+    return data;
+  }
+
+  async function begin() {
+    ui.go.disabled = true;
+    ui.go.textContent = "Préparation du lien…";
+    try {
+      const d = await api({ action: "start" });
+      if (d.ok && d.url) { location.href = d.url; return; }
+      showError(d.error);
+    } catch (e) { showError("network"); }
+  }
+
+  async function claim(token) {
+    show({ title: "Encore un instant", step: 2, wait: true });
+    try {
+      const d = await api({ action: "claim", token });
+      if (d.ok && d.key) return showKey(d.key, d.expires_at);
+      showError(d.error);
+    } catch (e) { showError("network", () => claim(token)); }
+  }
+
+  function restart() { location.href = location.pathname; }
+
+  // Petit graphique en chandeliers, en guise de code-barres du ticket
+  (function candles() {
+    let seed = 20261111;
+    const rnd = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296;
+    let out = "";
+    let mid = 15;
+    for (let x = 4; x < 332; x += 9) {
+      mid = Math.min(21, Math.max(9, mid + (rnd() - 0.5) * 9));
+      const h = 4 + rnd() * 9;
+      const wick = h / 2 + 1.5 + rnd() * 4;
+      out += `<path d="M${x + 2.5} ${(mid - wick).toFixed(1)}V${(mid + wick).toFixed(1)}" stroke="currentColor" stroke-width="1.2"/>` +
+             `<rect x="${x}" y="${(mid - h / 2).toFixed(1)}" width="5" height="${h.toFixed(1)}" rx="1" fill="currentColor"/>`;
+    }
+    $("candles").innerHTML = out;
+  })();
+
+  // ---------- Départ ----------
+  const token = new URLSearchParams(location.search).get("t");
+  if (token) claim(token); else showStart();
+
+  // Retour arrière depuis la page sponsorisée : on remet le bouton en état
+  addEventListener("pageshow", e => { if (e.persisted && !token) showStart(); });
+})();
+</script>
+</body>
+</html>
